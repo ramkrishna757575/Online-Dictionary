@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="dictionary">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>My Awesome Dictionary</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+	<link rel="stylesheet" href="css/customizations.css">
+</head>
+<!-- The apihitsController made available to the entire page -->
+<body ng-controller="apihitsController">
+	<!-- navbar begins here -->
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<!-- Brand and toggle get grouped for better mobile display -->
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<button class="navbar-toggle collapsed" onclick="showSidebar()">
+					<span class="glyphicon glyphicon-bookmark" aria-hidden="true"></span>
+				</button>
+				<a class="navbar-brand" href="#">LV's Awesome Dictionary</a>
+			</div>
+
+			<!-- Collect the nav links, forms, and other content for toggling -->
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+				<ul class="nav navbar-nav navbar-right">
+					<li>
+						<div >
+							<!-- display the apihits -->
+							<h4 class="apihits">Api Hits: {{hits}}</h4>
+						</div>
+					</li>
+				</ul>
+			</div><!-- /.navbar-collapse -->
+		</div><!-- /.container-fluid -->
+	</nav><!-- navbar-end -->
+
+	<!-- wordslistController starts here -->
+	<div class="container-fluid" ng-controller="wordslistController">
+		<!-- arrange contents in bootstrap's grid system -->
+		<div class="row">
+			<div class="col-md-9 col-sm-9">
+				<div class="row">
+					<div class="col-md-4">
+						<!-- the search-bar -->
+						<input type="text" class="form-control search-bar" placeholder="Search" ng-model="search_query" ng-change="$parent.nextwordIndex=1;getWords(1)" ng-model-options="{ updateOn: 'default', debounce: {'default': 500, 'blur': 0} }">
+						<!-- the clear button within the search bar -->
+						<button id="clear" ng-click="setSearchQuery('');getWords(1)">X</button>
+					</div>
+					
+					<!-- section to display the selected word and the options available -->
+					<div ng-if="selectedWord" class="selected-word col-md-8">
+						<p class="bg-success">Selected Word: {{selectedWord}}
+							<span>
+								<button class="button-simple" ng-class="{'button-active': isBookmarked(selectedWordId)==true}" ng-click="setBookmark(selectedWord,selectedWordId)">
+									<span class="glyphicon glyphicon-bookmark" aria-hidden="true"></span>
+								</button>
+								<button class="button-simple">
+									<span class="glyphicon glyphicon-volume-up" aria-hidden="true"></span>
+								</button>
+								<button class="button-simple">
+									<span class="glyphicon glyphicon-share" aria-hidden="true"></span>
+								</button>
+								<button class="button-simple button-warning" ng-click="setSelectedWord(selectedWord,selectedWordId)">
+									<span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
+								</button>
+							</span>
+						</p>
+					</div>
+				</div>
+
+				<!-- this section displays the words table -->
+				<div class="words-block">	
+					<div class="table-responsive words-table">
+						<table class="table table-striped table-bordered">
+							<tr>
+								<th>Word</th>
+								<th>Description</th>
+							</tr>
+							<tr ng-repeat="_word in words" ng-click="setSelectedWord(_word.word,_word.id)" ng-class="{'info': _word.id==selectedWordId}">
+								<td>{{_word.word}}</td>
+								<td>{{_word.definition}}</td>
+							</tr>
+						</table>
+					</div>		
+				</div>
+				<!-- this section provides the next and the previous buttons for the words table -->
+				<nav>
+					<ul class="pager">
+						<li class="previous">
+							<a href="#" ng-click="setPrevWordIndex();getWords(nextwordIndex)"><span aria-hidden="true">&larr;</span> Prev</a>
+						</li>
+						<li class="next">
+							<a href="#" ng-click="setNextWordIndex();getWords(nextwordIndex)">Next <span aria-hidden="true">&rarr;</span></a>
+						</li>
+					</ul>
+				</nav>		
+
+				<!-- this section contains the alphabetical pagination buttons -->
+				<nav>
+					<ul class="pagination">
+						<li ng-repeat="paginationElement in paginationArray">
+							<a href="#" ng-click="setSearchQuery(paginationElement);getWords(1)">{{paginationElement}} <span class="sr-only"></span></a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+
+			<!-- this section displays the bookmarks section and contents within it -->
+			<div class="col-md-3 col-sm-3" id="bookmark_responsive">
+				<div class="table-responsive words-table">
+					<table class="table table-striped table-bordered bookmarks-panel">
+						<tr>
+							<th style="background:#B2DFDB">My Bookmarks 
+								<span class="badge">{{bookmarkedWordsId.length}}</span>
+								<button style="float:right" class="button-simple" onclick="hideSidebar()" id="close-sidebar">
+									<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+								</button>
+								<button style="float:right" class="button-simple" ng-click="clearBookmarks()">
+									<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+								</button>	
+								<button style="float:right" class="button-simple" ng-click="downloadPdf()">
+									<span class="glyphicon glyphicon-download-alt" aria-hidden="true"></span>
+								</button>							
+							</th>
+						</tr>
+						<tr ng-repeat="bookmarked_word in bookmarkedWords track by $index" ng-click="setSearchQuery(bookmarked_word);$parent.nextwordIndex=bookmarkedWordsId[$index];setSelectedWord(bookmarked_word,bookmarkedWordsId[$index]);getWords(bookmarkedWordsId[$index]);">
+							<td>{{bookmarked_word}}</td>
+						</tr>
+					</table>
+				</div>
+			</div>			
+		</div>
+	</div><!-- wordslistController-end -->
+
+	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+	<script src="js/jquery-1.12.3.min.js"></script>
+	<!-- Latest compiled and minified JavaScript -->
+	<script SRC="bootstrap/js/bootstrap.min.js"></script>
+	<script src="js/angular.min.js"></script>
+	<!-- the module and controller files included -->
+	<script src="js/module/app.js"></script>
+	<script src="js/controllers/apihitsController.js"></script>
+	<script src="js/controllers/wordslistController.js"></script>
+	<script src="js/bookmark_panel_responsive.js"></script>
+</body>
+</html>
